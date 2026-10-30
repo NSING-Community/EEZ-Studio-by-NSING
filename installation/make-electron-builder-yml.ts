@@ -6,6 +6,30 @@ const YAML = require("json-to-pretty-yaml");
 
 const packageJson = require("../package.json");
 
+// Recursively enumerate a resource directory so nested layouts keep their
+// structure at the destination (resources/project-examples/examples/LVGL/...).
+async function getExtraResourceRecursive(
+    sourceDir: string,
+    destinationDir: string
+): Promise<{ from: string; to: string }[]> {
+    const entries = (await fs.promises.readdir(sourceDir, {
+        withFileTypes: true
+    })) as fs.Dirent[];
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
+    const result: { from: string; to: string }[] = [];
+    for (const entry of entries) {
+        const from = sourceDir + "/" + entry.name;
+        const to = destinationDir + "/" + entry.name;
+        if (entry.isDirectory()) {
+            result.push(...(await getExtraResourceRecursive(from, to)));
+        } else {
+            result.push({ from, to });
+        }
+    }
+    return result;
+}
+
 async function getExtraResource() {
     const extraResource: string[] = ["./resources/expression-grammar.pegjs"];
 
@@ -35,11 +59,35 @@ async function getExtraResource() {
         to: "docker-build/" + file
     }));
 
+    // Nested layout must be preserved so getBundledProjectExamplesDir() finds
+    // project-examples/examples/LVGL/*.eez-project next to process.resourcesPath.
+    let projectExamples = await getExtraResourceRecursive(
+        "./resources/project-examples",
+        "project-examples"
+    );
+
+    // Same for the built-in project templates (LVGL), so projects can be
+    // created on a permanently offline machine.
+    let projectTemplates = await getExtraResourceRecursive(
+        "./resources/project-templates",
+        "project-templates"
+    );
+
+    // Hand-maintained examples; kept in a separate directory so
+    // tools/fetch-project-resources.js can keep regenerating project-examples.
+    let projectExamplesCustom = await getExtraResourceRecursive(
+        "./resources/project-examples-custom",
+        "project-examples-custom"
+    );
+
     return [
         ...extraResources,
         ...eezFrameworkAmalgamation,
         ...eezGuiLite,
         ...dockerBuild,
+        ...projectExamples,
+        ...projectTemplates,
+        ...projectExamplesCustom,
         ...[
             {
                 from: "./LICENSE.TXT",
@@ -53,7 +101,7 @@ async function getExtraResource() {
     ];
 }
 
-const productName = "EEZ Studio";
+const productName = "EEZ Studio by Nsing";
 
 let files = [
     "build/**",

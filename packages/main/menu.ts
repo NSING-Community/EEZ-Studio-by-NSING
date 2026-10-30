@@ -28,11 +28,12 @@ import { currentLocale, t } from "eez-studio-shared/i18n";
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function showAboutBox(item: any, focusedWindow: any) {
-    if (focusedWindow) {
-        focusedWindow.webContents.send("show-about-box");
-    }
-}
+// 【定制】暂时隐藏关于页，菜单不再打开它。恢复时取消本注释。
+// function showAboutBox(item: any, focusedWindow: any) {
+//     if (focusedWindow) {
+//         focusedWindow.webContents.send("show-about-box");
+//     }
+// }
 
 function isMacOs() {
     return os.platform() === "darwin";
@@ -125,13 +126,14 @@ function buildMacOSAppMenu(
     return {
         label: APP_NAME,
         submenu: [
-            {
-                label: t("About {app}", { app: APP_NAME }),
-                click: showAboutBox
-            },
-            {
-                type: "separator"
-            },
+            // 【定制】暂时隐藏「关于」菜单项（关于页同时被禁用更新检查）。恢复时取消本注释。
+            // {
+            //     label: t("About {app}", { app: APP_NAME }),
+            //     click: showAboutBox
+            // },
+            // {
+            //     type: "separator"
+            // },
             {
                 label: t("Services"),
                 role: "services",
@@ -236,7 +238,7 @@ function buildFileMenu(win: IWindow | undefined) {
                             BrowserWindow.getFocusedWindow()!,
                             {
                                 type: "error",
-                                title: "EEZ Studio",
+                                title: "EEZ Studio by Nsing",
                                 message: t("File does not exist."),
                                 detail: t("The file '{file}' does not seem to exist anymore.", {
                                     file: mru.filePath
@@ -858,7 +860,7 @@ function buildMacOSWindowMenu(
 
 function buildHelpMenu(
     win: IWindow | undefined
-): Electron.MenuItemConstructorOptions {
+): Electron.MenuItemConstructorOptions | undefined {
     const helpMenuSubmenu: Electron.MenuItemConstructorOptions[] = [];
 
     if (isDev) {
@@ -874,10 +876,23 @@ function buildHelpMenu(
         });
     }
 
-    helpMenuSubmenu.push({
-        label: t("About"),
-        click: showAboutBox
-    });
+    // 【定制】暂时隐藏「关于」菜单项（关于页同时被禁用更新检查）。恢复时取消本注释。
+    // helpMenuSubmenu.push({
+    //     label: t("About"),
+    //     click: showAboutBox
+    // });
+
+    // 【定制】隐藏「关于」后可能留下尾部分隔线；菜单为空时整个「帮助」菜单不再挂载。
+    while (
+        helpMenuSubmenu.length > 0 &&
+        helpMenuSubmenu[helpMenuSubmenu.length - 1].type === "separator"
+    ) {
+        helpMenuSubmenu.pop();
+    }
+
+    if (helpMenuSubmenu.length === 0) {
+        return undefined;
+    }
 
     return {
         label: t("Help"),
@@ -905,7 +920,11 @@ function buildMenuTemplate(win: IWindow | undefined) {
     if (isMacOs()) {
         menuTemplate.push(buildMacOSWindowMenu(win));
     } else {
-        menuTemplate.push(buildHelpMenu(win));
+        // 【定制】「帮助」菜单里只剩「关于」（生产构建下），隐藏后不再挂一个空菜单。
+        const helpMenu = buildHelpMenu(win);
+        if (helpMenu) {
+            menuTemplate.push(helpMenu);
+        }
     }
 
     return menuTemplate;

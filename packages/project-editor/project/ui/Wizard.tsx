@@ -58,8 +58,19 @@ import {
     ProjectType
 } from "project-editor/project/project";
 import { ButtonAction } from "eez-studio-ui/action";
+import * as notification from "eez-studio-ui/notification";
 import type { CommandsProtocolType } from "eez-studio-shared/extensions/extension";
 import { compareVersions } from "eez-studio-shared/util";
+import {
+    loadExampleProjectWithFallback,
+    readBundledExampleProject,
+    readBundledExampleResource,
+    readExampleResourceFromCache,
+    writeExampleResourceToCache
+} from "project-editor/store/examples-storage";
+import {
+    loadProjectTemplateWithFallback
+} from "project-editor/store/templates-storage";
 
 // from https://envox.eu/gitea
 interface TemplateProject {
@@ -98,6 +109,10 @@ export interface ExampleProject {
     authorLink?: string;
     minStudioVersion?: string;
     resourceFiles: string[];
+
+    // Set by examples-catalog.ts for the hand-maintained examples bundled in
+    // resources/project-examples-custom. Not present in the JSON on purpose.
+    custom?: boolean;
 }
 
 interface IProjectType {
@@ -106,6 +121,7 @@ interface IProjectType {
     repository?: string;
     eezProjectPath?: string;
     folder?: string;
+    custom?: boolean;
 
     projectName: string;
     defaultProjectName?: string;
@@ -174,6 +190,19 @@ function getTemplatePathOrUrl(relativePath: string): string {
     return EEZ_PROJECT_TEMPLATES_BASE_URL + relativePath;
 }
 
+// Map a template URL back to its path inside resources/project-templates.
+function getBundledTemplateRelativePath(url: string): string | undefined {
+    if (!url.startsWith(EEZ_PROJECT_TEMPLATES_BASE_URL)) {
+        return undefined;
+    }
+    const relativePath = url.substring(EEZ_PROJECT_TEMPLATES_BASE_URL.length);
+    try {
+        return decodeURIComponent(relativePath);
+    } catch (error) {
+        return undefined;
+    }
+}
+
 // Helper function to load template file (either from local path or URL)
 async function loadTemplateFile(
     pathOrUrl: string,
@@ -195,6 +224,40 @@ async function loadTemplateFile(
     // Load from URL
     return fetchUrlOrReadFromCache(pathOrUrl, resultType);
 }
+
+function downloadResourceFile(resourceFileUrl: string) {
+    return new Promise<Buffer>((resolve, reject) => {
+        let req = new XMLHttpRequest();
+        req.responseType = "arraybuffer";
+        req.open("GET", resourceFileUrl);
+
+        req.addEventListener("load", async () => {
+            if (req.readyState == 4) {
+                if (req.status != 200 || !req.response) {
+                    reject(t("Download failed!"));
+                    return;
+                }
+                try {
+                    resolve(Buffer.from(req.response));
+                } catch (err) {
+                    reject(err);
+                }
+            }
+        });
+
+        req.addEventListener("error", error => {
+            reject(t("Network error"));
+        });
+
+        req.send();
+    });
+}
+
+// Show the "using the bundled example" hint at most once per app session.
+let bundledExampleProjectNotificationShown = false;
+
+// Same for the "using the bundled project template" hint.
+let bundledProjectTemplateNotificationShown = false;
 
 const SAVED_OPTIONS_VERSION = 12;
 
@@ -218,6 +281,22 @@ export class WizardModel {
         wizardModel.type = "dashboard";
 
         wizardModel.location = getHomePath("eez-projects");
+
+        // 【定制】把 type 归一到当前可见的模板列表。白名单（CREATE_PROJECT_TYPES_FILTER）
+        // 之后 "dashboard" 已不可见，selectedProjectType 会是 undefined，点「创建」就抛
+        // "Can't load EEZ-PROJECT file: no URL specified"（loadEezProject 里原本写给
+        // gitea 在线模板的 !urlDef 分支）。放在这里而不是构造函数里：上面这行 type = "dashboard"
+        // 是最后写入者，构造函数里的归一会被它覆盖。
+        // 列表为空时保持原样，免得白名单被清空时反而选不出东西。
+        const visibleProjectTypes = wizardModel.projectTypes;
+        if (
+            visibleProjectTypes.length > 0 &&
+            !visibleProjectTypes.some(
+                projectType => projectType.id == wizardModel.type
+            )
+        ) {
+            wizardModel.type = visibleProjectTypes[0].id;
+        }
 
         return wizardModel;
     }
@@ -600,8 +679,11 @@ export class WizardModel {
                     ) >= 0
             )
             // 【定制】示例页按名称白名单过滤（见 EXAMPLES_PROJECT_NAMES_FILTER）。
+            // 自定义示例（custom-examples.json）不受白名单限制，否则每次增删
+            // 示例都要同步修改这里。
             .filter(
                 example =>
+                    example.custom === true ||
                     EXAMPLES_PROJECT_NAMES_FILTER.length === 0 ||
                     EXAMPLES_PROJECT_NAMES_FILTER.includes(
                         example.projectName
@@ -623,6 +705,7 @@ export class WizardModel {
                 repository: example.repository,
                 eezProjectPath: example.eezProjectPath,
                 folder: example.folder,
+                custom: example.custom,
                 projectType:
                     PROJECT_TYPE_NAMES[example.projectType as ProjectType],
                 defaultProjectName: example.projectName,
@@ -1148,7 +1231,61 @@ export class WizardModel {
                     projectFilePath = urlDef[this.lvglVersion];
                 }
             }
+
+            // 【定制】模板同样支持离线：先联网下载并写入用户缓存，失败时
+            // 依次回退到用户缓存和随应用发布的内置副本。
+            // 本地模板目录（useLocalTemplates）仍走原来的直接读文件逻辑。
+            if (
+                typeof projectFilePath == "string" &&
+                /^https?:\/\//i.test(projectFilePath)
+            ) {
+                const { project, source } =
+                    await loadProjectTemplateWithFallback(
+                        projectFilePath,
+                        getBundledTemplateRelativePath(projectFilePath)
+                    );
+                if (
+                    source == "bundled" &&
+                    !bundledProjectTemplateNotificationShown
+                ) {
+                    bundledProjectTemplateNotificationShown = true;
+                    notification.info(
+                        t("Using the bundled project template.")
+                    );
+                }
+                return project;
+            }
         } else {
+            // 【定制】示例工程支持离线：先联网下载并写入用户缓存，失败时依次
+            // 回退到用户缓存和随应用发布的内置副本（resources/project-examples）。
+            if (this.selectedProjectType?.eezProjectPath) {
+                // 【定制】自定义示例只随应用发布，没有上游文件可下载，直接读
+                // 内置副本；读不到时仍走下面的三级回退链。
+                if (this.selectedProjectType.custom) {
+                    const bundledProject = await readBundledExampleProject(
+                        this.selectedProjectType.eezProjectPath
+                    );
+                    if (bundledProject) {
+                        return bundledProject;
+                    }
+                }
+
+                const { project, source } = await loadExampleProjectWithFallback(
+                    this.type!,
+                    this.selectedProjectType.eezProjectPath
+                );
+                if (
+                    source == "bundled" &&
+                    !bundledExampleProjectNotificationShown
+                ) {
+                    bundledExampleProjectNotificationShown = true;
+                    notification.info(
+                        t("Offline: using the bundled example project.")
+                    );
+                }
+                return project;
+            }
+
             projectFilePath = this.type!;
         }
 
@@ -1156,34 +1293,36 @@ export class WizardModel {
     }
 
     async loadResourceFile(resourceFileRelativePath: string) {
-        return new Promise<any>((resolve, reject) => {
-            const resourceFileUrl =
-                path.dirname(this.type!) + "/" + resourceFileRelativePath;
+        const resourceFileUrl =
+            path.dirname(this.type!) + "/" + resourceFileRelativePath;
 
-            let req = new XMLHttpRequest();
-            req.responseType = "arraybuffer";
-            req.open("GET", resourceFileUrl);
+        try {
+            const data = await downloadResourceFile(resourceFileUrl);
+            if (this.section == "examples") {
+                await writeExampleResourceToCache(resourceFileUrl, data);
+            }
+            return data;
+        } catch (error) {
+            // 【定制】与 loadEezProject 相同的离线回退链。
+            const cachedData = await readExampleResourceFromCache(
+                resourceFileUrl
+            );
+            if (cachedData) {
+                return cachedData;
+            }
 
-            req.addEventListener("load", async () => {
-                if (req.readyState == 4) {
-                    if (req.status != 200 || !req.response) {
-                        reject(t("Download failed!"));
-                        return;
-                    }
-                    try {
-                        resolve(Buffer.from(req.response));
-                    } catch (err) {
-                        reject(err);
-                    }
+            if (this.section == "examples") {
+                const bundledData = await readBundledExampleResource(
+                    this.selectedProjectType?.eezProjectPath,
+                    resourceFileRelativePath
+                );
+                if (bundledData) {
+                    return bundledData;
                 }
-            });
+            }
 
-            req.addEventListener("error", error => {
-                reject(t("Network error"));
-            });
-
-            req.send();
-        });
+            throw error;
+        }
     }
 
     get projectFolderPath() {

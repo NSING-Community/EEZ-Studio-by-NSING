@@ -532,7 +532,7 @@ export const ConnectionLineParams = observer(
                             htmlFor="ConnectionLineParams_Space"
                             className="col-sm-2 col-form-label"
                         >
-                            Space ({PARAMS.SPACE}):
+                            {t("Space")} ({PARAMS.SPACE}):
                         </label>
                         <div className="col-sm-10">
                             <input

@@ -25,22 +25,14 @@
         overflow-y: auto;
         overflow-x: hidden;
 
-        .EezStudio_HomeTab_Sidebar_Brand {
-            padding: 2px 6px 16px;
-
-            .EezStudio_HomeTab_Sidebar_Logo {
-                display: block;
-                height: 30px;
-                width: auto;
-                max-width: 100%;
-                object-fit: contain;
-            }
-        }
-
         .EezStudio_HomeTab_Navigation {
             display: flex;
             flex-direction: column;
             gap: 4px;
+
+            // Take the free vertical space so the divider below can push the
+            // Settings item to the bottom of the rail (see the divider rule).
+            flex: 1 1 auto;
 
             .EezStudio_HomeTab_NavigationItem {
                 display: flex;
@@ -56,6 +48,10 @@
                 cursor: pointer;
                 color: @textColor;
                 white-space: nowrap;
+
+                // A touch larger than the app's 0.8rem base so the rail reads
+                // as navigation rather than body text.
+                font-size: 0.875rem;
 
                 &:not(.selected):hover {
                     background-color: @sidebarItemHoverBackgroundColor;
@@ -123,12 +119,17 @@
         .EezStudio_HomeTab_Sidebar_Divider {
             flex: 0 0 auto;
             height: 1px;
-            margin: 10px 6px;
+            // Auto top margin drops the divider - and the Settings item that
+            // follows it - to the bottom of the navigation column, just above
+            // the version footer.
+            margin: auto 6px 10px;
             background-color: @borderColor;
         }
 
         .EezStudio_HomeTab_Sidebar_Footer {
-            margin-top: auto;
+            // The navigation column already grows to fill the rail, so no auto
+            // margin is needed (a second one would split the free space).
+            margin-top: 0;
             padding: 10px 6px 2px;
             border-top: 1px solid @borderColor;
             font-size: 80%;

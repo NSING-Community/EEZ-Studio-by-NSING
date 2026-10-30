@@ -4,7 +4,7 @@ import { t } from "eez-studio-shared/i18n";
 export function info(message: string, detail: string | undefined) {
     return dialog.showMessageBox(getCurrentWindow(), {
         type: "info",
-        title: "EEZ Studio",
+        title: "EEZ Studio by Nsing",
         message: message,
         detail: detail,
         noLink: true,
@@ -15,7 +15,7 @@ export function info(message: string, detail: string | undefined) {
 export function error(message: string, detail: string | undefined) {
     return dialog.showMessageBox(getCurrentWindow(), {
         type: "error",
-        title: "EEZ Studio",
+        title: "EEZ Studio by Nsing",
         message: message,
         detail: detail,
         noLink: true,
@@ -31,7 +31,7 @@ export async function confirm(
 ) {
     const result = await dialog.showMessageBox(getCurrentWindow(), {
         type: "question",
-        title: "EEZ Studio",
+        title: "EEZ Studio by Nsing",
         message: message,
         detail: detail,
         noLink: true,
@@ -52,7 +52,7 @@ export async function confirmPromise(
 ) {
     const result = await dialog.showMessageBox(getCurrentWindow(), {
         type: "question",
-        title: "EEZ Studio",
+        title: "EEZ Studio by Nsing",
         message: message,
         detail: detail,
         noLink: true,
@@ -73,7 +73,7 @@ export async function confirmWithButtons(
 ) {
     const result = await dialog.showMessageBox(getCurrentWindow(), {
         type: "question",
-        title: "EEZ Studio",
+        title: "EEZ Studio by Nsing",
         message: message,
         detail: detail,
         noLink: true,

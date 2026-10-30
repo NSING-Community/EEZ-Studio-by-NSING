@@ -447,7 +447,7 @@ export const GenericDialog = observer(
                             const name =
                                 fieldProperties.displayName != undefined
                                     ? fieldProperties.displayName
-                                    : humanize(fieldProperties.name);
+                                    : t(humanize(fieldProperties.name));
                             const value =
                                 this.fieldValues[fieldProperties.name] ?? "";
                             const onChange = this.onChange.bind(
@@ -499,7 +499,7 @@ export const GenericDialog = observer(
                                         >
                                             {typeof enumItem === "string" ||
                                             typeof enumItem === "number"
-                                                ? humanize(enumItem)
+                                                ? t(humanize(enumItem))
                                                 : enumItem.label}
                                         </Radio>
                                     );
@@ -560,7 +560,7 @@ export const GenericDialog = observer(
                                         <option key={id} value={id}>
                                             {typeof enumItem === "string" ||
                                             typeof enumItem === "number"
-                                                ? humanize(enumItem)
+                                                ? t(humanize(enumItem))
                                                 : enumItem.label}
                                         </option>
                                     );

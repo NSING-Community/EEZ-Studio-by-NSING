@@ -1018,9 +1018,9 @@ export class Tabs {
         if (this.activeTab) {
             return `${this.activeTab.modified ? MODIFED_MARK : ""}${
                 this.activeTab.titleStr
-            } - EEZ Studio`;
+            } - EEZ Studio by Nsing`;
         }
-        return "EEZ Studio";
+        return "EEZ Studio by Nsing";
     }
 
     get allTabs() {

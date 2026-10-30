@@ -15,6 +15,7 @@ import type * as HomeWindowModule from "main/home-window";
 import { unloadVisa } from "instrument/connection/interfaces/visa-dll";
 import { setup } from "main/setup";
 import { HOME_WINDOW_URL } from "main/home-window";
+import { t } from "eez-studio-shared/i18n";
 
 // disable security warnings inside dev console
 process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = true as any;
@@ -23,8 +24,73 @@ configure({ enforceActions: "observed" });
 
 const contextMenu = require("electron-context-menu");
 
+// electron-context-menu builds its default (Cut/Copy/Paste/Inspect Element ...)
+// labels in English. Getters keep them in sync with the current locale: the
+// package reads labels[id] every time the menu is shown, so switching the
+// language takes effect without restarting the app.
+const contextMenuLabels = {
+    get learnSpelling() {
+        return t("Learn Spelling");
+    },
+    get lookUpSelection() {
+        return t("Look Up “{selection}”");
+    },
+    get searchWithGoogle() {
+        return t("Search with Google");
+    },
+    get cut() {
+        return t("Cut");
+    },
+    get copy() {
+        return t("Copy");
+    },
+    get paste() {
+        return t("Paste");
+    },
+    get selectAll() {
+        return t("Select All");
+    },
+    get saveImage() {
+        return t("Save Image");
+    },
+    get saveImageAs() {
+        return t("Save Image As…");
+    },
+    get saveVideo() {
+        return t("Save Video");
+    },
+    get saveVideoAs() {
+        return t("Save Video As…");
+    },
+    get copyLink() {
+        return t("Copy Link");
+    },
+    get saveLinkAs() {
+        return t("Save Link As…");
+    },
+    get copyImage() {
+        return t("Copy Image");
+    },
+    get copyImageAddress() {
+        return t("Copy Image Address");
+    },
+    get copyVideoAddress() {
+        return t("Copy Video Address");
+    },
+    get inspect() {
+        return t("Inspect Element");
+    },
+    get services() {
+        return t("Services");
+    },
+    get dictionarySuggestions() {
+        return t("No Guesses Found");
+    }
+};
+
 contextMenu({
-    showSaveImageAs: true
+    showSaveImageAs: true,
+    labels: contextMenuLabels as any
 });
 
 ////////////////////////////////////////////////////////////////////////////////

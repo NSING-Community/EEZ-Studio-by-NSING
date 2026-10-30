@@ -45,7 +45,10 @@ export const Day = observer(
                 selected: this.props.history.calendar.isSelectedDay(day)
             });
 
-            const tooltip = `${activityInfo} on ${formatDate(day)}`;
+            const tooltip = t("{activityInfo} on {date}", {
+                activityInfo,
+                date: formatDate(day)
+            });
 
             return (
                 <div

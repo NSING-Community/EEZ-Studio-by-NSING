@@ -524,7 +524,7 @@ export async function generateMarkdownFilesForAllComponents() {
         await generateParentMarkdownFiles(entry[0], entry[1]);
     }
 
-    notification.info("Done.");
+    notification.info(t("Done."));
 
     setupMarkdownWatcher();
 }

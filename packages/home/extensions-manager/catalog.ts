@@ -18,6 +18,14 @@ export const DEFAULT_EXTENSIONS_CATALOG_VERSION_DOWNLOAD_URL =
 export const DEFAULT_EXTENSIONS_CATALOG_DOWNLOAD_URL =
     "https://github.com/eez-open/studio-extensions/raw/master/build/catalog.zip";
 
+// 【定制】启动时是否联网检查扩展目录的新版本。
+// 扩展页与仪器页都已隐藏（见 home-tab.tsx 的【定制】注释），extensionsCatalog 目前没有
+// 可见的消费者；而这个检查在 github.com 不可达时会每次启动弹一条
+// "Failed to download extensions catalog version"。恢复：改为 true。
+// 本地 catalog.json 的读取（_loadCatalog / _loadCatalogVersion）不受影响。
+// 手动「检查更新」按钮走 extensions-manager.tsx 里的 forceDownload 分支，也不受影响。
+const CHECK_EXTENSIONS_CATALOG_VERSION = false;
+
 interface ICatalogVersion {
     lastModified: Date;
 }
@@ -49,7 +57,10 @@ class ExtensionsCatalog {
             .then(catalogVersion => {
                 runInAction(() => (this.catalogVersion = catalogVersion));
 
-                this.checkNewVersionOfCatalog();
+                // 【定制】见 CHECK_EXTENSIONS_CATALOG_VERSION
+                if (CHECK_EXTENSIONS_CATALOG_VERSION) {
+                    this.checkNewVersionOfCatalog();
+                }
             })
             .catch(error =>
                 notification.error(

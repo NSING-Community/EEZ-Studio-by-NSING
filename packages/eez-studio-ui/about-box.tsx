@@ -20,6 +20,10 @@ const STUDIO_GITHUB_PAGE_URL = "https://github.com/eez-open/studio";
 
 const GET_LATEST_VERSION_MIN_DURATION = 1000;
 
+// 【定制】暂时禁用更新检查：不显示「检查更新」按钮，也不会发起任何网络请求（应用本身
+// 没有后台自动更新逻辑，唯一的检查入口就是这里）。恢复时改为 false。
+const CHECK_FOR_UPDATES_DISABLED = true;
+
 function openLink(url: string) {
     const { shell } = require("electron");
     shell.openExternal(url);
@@ -100,7 +104,7 @@ const AboutBox = observer(
         checkForUpdates = async (event: React.MouseEvent) => {
             event.preventDefault();
 
-            if (this.checkingForUpdates) {
+            if (CHECK_FOR_UPDATES_DISABLED || this.checkingForUpdates) {
                 return;
             }
 
@@ -221,13 +225,16 @@ const AboutBox = observer(
 
                         {this.versionInfo}
 
-                        <button
-                            className="EezStudio_CheckForUpdate btn btn-sm btn-secondary"
-                            onClick={this.checkForUpdates}
-                            disabled={this.checkingForUpdates}
-                        >
-                            {t("Check for Updates")}
-                        </button>
+                        {/* 【定制】暂时禁用更新检查，按钮不再显示（恢复时去掉外层判断）。 */}
+                        {!CHECK_FOR_UPDATES_DISABLED && (
+                            <button
+                                className="EezStudio_CheckForUpdate btn btn-sm btn-secondary"
+                                onClick={this.checkForUpdates}
+                                disabled={this.checkingForUpdates}
+                            >
+                                {t("Check for Updates")}
+                            </button>
+                        )}
 
                         <div className="EezStudio_Links">
                             <a

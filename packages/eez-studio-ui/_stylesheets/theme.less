@@ -374,6 +374,15 @@
     font-weight: 500;
 }
 
+// The Home tab is always the first tab — HomeTab is created first, and
+// tabs.tsx refuses drops before index 0. Give it exactly the home sidebar's
+// width (232px, home.less) so the tab strip's first division lines up with the
+// navigation rail below it.
+.EezStudio_TabsView > div.EezStudio_Tab:first-child {
+    flex: 0 0 232px;
+    max-width: 232px;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Badges / progress
 
@@ -507,6 +516,15 @@
 
 .Toastify__close-button--light {
     color: @textColor;
+}
+
+// The window chrome is drawn in-page now: a 38px title bar (app.less
+// .EezStudio_AppHeader) with the system caption buttons over its top-right,
+// followed by a 30px menu bar. react-toastify's default 1em top puts a
+// top-right toast right on top of the title bar and those window buttons, so
+// start it below both strips, with a small gap.
+.Toastify__toast-container--top-right {
+    top: 76px;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

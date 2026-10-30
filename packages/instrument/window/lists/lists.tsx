@@ -258,8 +258,8 @@ export const DetailsView = observer(
                             <span className="">{description}</span>{" "}
                             {modifiedAtStr && (
                                 <span className="font-weight-light">
-                                    {description ? " - " : ""}Modified at{" "}
-                                    {modifiedAtStr}
+                                    {description ? " - " : ""}
+                                    {t("Modified at")} {modifiedAtStr}
                                 </span>
                             )}
                         </Header>
@@ -344,7 +344,7 @@ export const SelectChannelDialog = observer(
 
         handleSubmit() {
             if (this.channelIndex <= 0) {
-                this.inputErrors = ["Invalid value"];
+                this.inputErrors = [t("Invalid value")];
                 return false;
             }
 
@@ -573,7 +573,7 @@ export const ListsButtons = observer(
 
         getList = async () => {
             let channelIndex = await selectChannel(
-                "Get list from channel:",
+                t("Get list from channel:"),
                 this.numChannels
             );
 
@@ -684,7 +684,7 @@ export const ListsButtons = observer(
         sendList = async () => {
             if (this.selectedList) {
                 let channelIndex = await selectChannel(
-                    "Send list to channel:",
+                    t("Send list to channel:"),
                     this.numChannels
                 );
                 const channel = getTableListData(

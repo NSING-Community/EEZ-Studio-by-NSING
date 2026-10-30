@@ -3,7 +3,7 @@
     "author": "Envox <eez@envox.hr>",
     "description": "Cross-platform visual development tool and SCPI instrument controller",
     "homepage": "https://www.envox.hr/eez/studio/studio-introduction.html",
-    "version": "0.29.0",
+    "version": "0.29.1",
     "revision": "1",
     "license": "GPL-3.0-only",
     "repository": {
@@ -45,6 +45,8 @@
         "generate-license-file": "npx generate-license-file",
         "madge-circular": "madge --circular packages/home/main.tsx > circular.txt",
         "i18n-audit": "node tools/i18n-audit.js",
+        "fetch-project-resources": "node tools/fetch-project-resources.js",
+        "fetch-project-examples": "npm run fetch-project-resources",
         "madge-graph": "madge --image source-graph.svg packages/home/main.tsx",
         "madge-graph-circular": "madge --circular --image source-graph-circular.svg packages/home/main.tsx"
     },
@@ -176,9 +178,6 @@
         "xml-formatter": "1.2.1",
         "xterm": "4.19.0",
         "xterm-addon-fit": "0.5.0"
-    },
-    "directories": {
-        "doc": "docs"
     },
     "bugs": {
         "url": "https://github.com/eez-open/studio/issues"

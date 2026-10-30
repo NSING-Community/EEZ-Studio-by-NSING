@@ -38,6 +38,13 @@ const MainContent = observer(
                     {/* 标题栏只放窗口标题：main/window.ts 用 titleBarStyle:"hidden"
                         去掉了原生标题栏，这一条就是标题栏本身（可拖拽，系统按钮叠在右上角）。 */}
                     <Header className="EezStudio_AppHeader">
+                        {/* 品牌图标放在标题栏最左侧（原来在首页侧边栏顶部）。
+                            只显示纯图标（与窗口/任务栏图标同一张），不带 "EEZ Studio" 字样。 */}
+                        <img
+                            className="EezStudio_AppHeader_Logo"
+                            alt=""
+                            src="../eez-studio-ui/_images/eez_studio_logo.png"
+                        />
                         <div className="EezStudio_AppHeader_Title">
                             {tabs.documentTitle}
                         </div>

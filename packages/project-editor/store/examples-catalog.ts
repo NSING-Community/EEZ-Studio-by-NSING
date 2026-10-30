@@ -13,6 +13,12 @@ import { t } from "eez-studio-shared/i18n";
 
 import type { ExampleProject } from "project-editor/project/ui/Wizard";
 
+import {
+    readBundledCustomExamplesCatalog,
+    readBundledExamplesCatalog,
+    readBundledExamplesCatalogVersion
+} from "project-editor/store/examples-storage";
+
 export const EEZ_PROJECT_EXAMPLES_REPOSITORY =
     "https://github.com/eez-open/eez-project-examples";
 
@@ -31,6 +37,15 @@ class ExamplesCatalog {
 
     catalog: ExampleProject[] = [];
     catalogVersion: ICatalogVersion;
+
+    // True when the catalog was read from the copy bundled with the app instead
+    // of the user data directory. Not observable on purpose: it only gates the
+    // "failed to download catalog version" toast below.
+    catalogLoadedFromBundled = false;
+
+    // Hand-maintained examples bundled with the app; merged into every catalog
+    // (including one downloaded from upstream) so they never disappear.
+    private customExamples: ExampleProject[] | undefined;
 
     onNewCatalog: () => void | undefined;
 
@@ -71,14 +86,64 @@ class ExamplesCatalog {
         return getUserDataPath("examples-catalog.json");
     }
 
+    private async getCustomExamples(): Promise<ExampleProject[]> {
+        if (!this.customExamples) {
+            const custom = await readBundledCustomExamplesCatalog();
+            this.customExamples = Array.isArray(custom)
+                ? (custom as ExampleProject[]).map(example => ({
+                      ...example,
+                      custom: true
+                  }))
+                : [];
+        }
+        return this.customExamples;
+    }
+
+    // Drop every custom entry from the base catalog (including stale ones
+    // persisted by an older build), then append the current bundled list.
+    private mergeCustomExamples(catalog: ExampleProject[]): ExampleProject[] {
+        const custom = this.customExamples ?? [];
+        const key = (example: ExampleProject) =>
+            `${example.repository}|${(example.eezProjectPath || "").replace(
+                /\\/g,
+                "/"
+            )}`;
+        const customKeys = new Set(custom.map(key));
+        return [
+            ...catalog.filter(
+                example => !example.custom && !customKeys.has(key(example))
+            ),
+            ...custom
+        ];
+    }
+
     async _loadCatalog() {
+        this.catalogLoadedFromBundled = false;
+        await this.getCustomExamples();
+
         let catalogPath = this.catalogPath;
         if (await fileExists(catalogPath)) {
-            return (await readJsObjectFromFile(
-                catalogPath
-            )) as ExampleProject[];
+            try {
+                return this.mergeCustomExamples(
+                    (await readJsObjectFromFile(catalogPath)) as ExampleProject[]
+                );
+            } catch (error) {
+                console.warn(
+                    "Failed to read examples catalog, falling back to the bundled copy",
+                    error
+                );
+            }
         }
-        return [] as ExampleProject[];
+
+        // A fresh (possibly offline) installation has no catalog in the user
+        // data directory, but the app ships a seed with the curated examples.
+        const bundledCatalog = await readBundledExamplesCatalog();
+        if (bundledCatalog) {
+            this.catalogLoadedFromBundled = true;
+            return this.mergeCustomExamples(bundledCatalog as ExampleProject[]);
+        }
+
+        return this.mergeCustomExamples([] as ExampleProject[]);
     }
 
     get catalogVersionPath() {
@@ -100,6 +165,13 @@ class ExamplesCatalog {
                 console.error(err);
             }
         }
+
+        // Offline install: the version shipped next to the bundled catalog seed
+        // keeps the "is there a newer catalog?" check meaningful.
+        if (this.catalogLoadedFromBundled) {
+            return await readBundledExamplesCatalogVersion();
+        }
+
         return undefined;
     }
 
@@ -119,9 +191,13 @@ class ExamplesCatalog {
             }
         } catch (error) {
             console.error(error);
-            notification.error(
-                t("Failed to download eez-project examples catalog version")
-            );
+            if (!this.catalogLoadedFromBundled) {
+                // Offline machines that run on the bundled seed would otherwise
+                // get this toast every time the Examples page is opened.
+                notification.error(
+                    t("Failed to download eez-project examples catalog version")
+                );
+            }
         }
 
         return true;
@@ -196,11 +272,16 @@ class ExamplesCatalog {
 
             const files = await decompress(Buffer.from(req.response));
 
-            const catalog = JSON.parse(files[0].data);
+            // The full upstream catalog supersedes the bundled seed, but the
+            // hand-maintained examples must survive the refresh.
+            await this.getCustomExamples();
+            const catalog = this.mergeCustomExamples(JSON.parse(files[0].data));
 
             runInAction(() => {
                 this.catalog = catalog;
             });
+
+            this.catalogLoadedFromBundled = false;
 
             if (this.onNewCatalog) {
                 this.onNewCatalog();

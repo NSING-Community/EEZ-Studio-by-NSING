@@ -8,7 +8,7 @@ import { Icon } from "eez-studio-ui/icon";
 import { t } from "eez-studio-shared/i18n";
 import { studioVersion } from "eez-studio-shared/util";
 
-import { Settings, settingsController } from "home/settings";
+import { Settings } from "home/settings";
 import {
     NewProjectWizard,
     wizardModelTemplates,
@@ -158,18 +158,6 @@ export const Home = observer(
             return (
                 <div className="EezStudio_HomeTab">
                     <div className="EezStudio_HomeTab_Sidebar">
-                        <div className="EezStudio_HomeTab_Sidebar_Brand">
-                            <img
-                                className="EezStudio_HomeTab_Sidebar_Logo"
-                                alt=""
-                                src={
-                                    settingsController.isDarkTheme
-                                        ? "../eez-studio-ui/_images/eez_studio_logo_with_title_dark.png"
-                                        : "../eez-studio-ui/_images/eez_studio_logo_with_title.png"
-                                }
-                            />
-                        </div>
-
                         <div className="EezStudio_HomeTab_Navigation">
                             <HomeNavigationItem
                                 id="open"

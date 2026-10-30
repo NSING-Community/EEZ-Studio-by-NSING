@@ -6,6 +6,7 @@ import { ListNavigation } from "project-editor/ui-components/ListNavigation";
 import { FlexLayoutContainer } from "eez-studio-ui/FlexLayout";
 import { isObjectExists } from "project-editor/store";
 import { ProjectContext } from "project-editor/project/context";
+import { t } from "eez-studio-shared/i18n";
 import { Bitmap, createBitmapFromFile } from "./bitmap";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -113,7 +114,7 @@ const BitmapEditor = observer(
                     style={{ padding: 10 }}
                 >
                     <div style={{ marginBottom: 10 }}>
-                        Dimension: {bitmap.imageElement.width} x{" "}
+                        {t("Dimension:")} {bitmap.imageElement.width} x{" "}
                         {bitmap.imageElement.height} px
                     </div>
                     <div>

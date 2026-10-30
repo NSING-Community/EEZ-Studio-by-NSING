@@ -13,4 +13,4 @@ export function getIcon() {
     }
 }
 
-export const APP_NAME = "EEZ Studio";
+export const APP_NAME = "EEZ Studio by Nsing";

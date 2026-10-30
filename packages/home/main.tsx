@@ -10,7 +10,8 @@ import { loadExtensions } from "eez-studio-shared/extensions/extensions";
 import { getNodeModuleFolders } from "eez-studio-shared/extensions/yarn";
 
 import * as notification from "eez-studio-ui/notification";
-import { showAboutBox } from "eez-studio-ui/about-box";
+// 【定制】暂时隐藏关于页。恢复时取消本注释。
+// import { showAboutBox } from "eez-studio-ui/about-box";
 
 import type * as ImportInstrumentDefinitionModule from "instrument/import-instrument-definition";
 
@@ -85,9 +86,10 @@ ipcRenderer.on(
     }
 );
 
-ipcRenderer.on("show-about-box", async () => {
-    showAboutBox();
-});
+// 【定制】暂时隐藏关于页。恢复时取消本注释。
+// ipcRenderer.on("show-about-box", async () => {
+//     showAboutBox();
+// });
 
 ipcRenderer.on(
     "open-project",

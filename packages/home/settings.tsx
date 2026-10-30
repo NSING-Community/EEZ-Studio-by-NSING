@@ -1044,7 +1044,8 @@ export const Settings = observer(
                                 )
                                 .map(locale => (
                                     <option key={locale} value={locale}>
-                                        {(LOCALES as any)[locale]}
+                                        {/* 语言名称按界面语言显示，例如中文界面下显示「简体中文」 */}
+                                        {t((LOCALES as any)[locale])}
                                     </option>
                                 ))}
                         </SelectProperty>

@@ -778,7 +778,7 @@ export const RulersDockView = observer(
                                         )
                                     }
                                 >
-                                    Enable{" "}
+                                    {t("Enable")}{" "}
                                     {this.props.chartsController
                                         .chartControllers.length > 1
                                         ? `"${this.props.chartsController.chartControllers[chartIndex].yAxisController.axisModel.label}" `
